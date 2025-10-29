@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 provider "aws"  {
   region = "us-east-1"
 }
@@ -81,4 +81,4 @@ resource "aws_route_table_association" "my_aws_route_table_association" {
   route_table_id = aws_route_table.my_aws_route_table.id
 }
 
->>>>>>> b1c089f (file added)
+
