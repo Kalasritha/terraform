@@ -1,74 +1,39 @@
-resource "aws_eks_cluster" "eks-cluster" {
-  name = var.cluster_name
+# Create EKS Cluster
+resource "aws_eks_cluster" "eks_cluster" {
+  name     = var.cluster_name
+  role_arn = aws_iam_role.eks_cluster_role.arn
 
-  access_config {
-    authentication_mode = "API"
-  }
-
-  role_arn = aws_iam_role.cluster.arn
-  version  = var.cluster_version
   vpc_config {
-
-    endpoint_private_access = false
-    endpoint_public_access  = true
-    public_access_cidrs     = ["0.0.0.0/0"]
-    subnet_ids = [
-      aws_subnet.public-subnet-1.id,
-      aws_subnet.public-subnet-2.id,
-    ]
-    security_group_ids = [
-      aws_security_group.kubernetes_master.id
-    ]
+    subnet_ids = [aws_subnet.public.id]
   }
 
-
-  kubernetes_network_config {
-    service_ipv4_cidr = "172.20.0.0/16"
-  }
-
-  # Ensure that IAM Role permissions are created before and deleted
-  # after EKS Cluster handling. Otherwise, EKS will not be able to
-  # properly delete EKS managed EC2 infrastructure such as Security Groups.
   depends_on = [
-    aws_iam_role_policy_attachment.cluster_AmazonEKSClusterPolicy,
-    aws_iam_role_policy_attachment.eks-AmazonEKSVPCResourceController
+    aws_iam_role_policy_attachment.eks_cluster_policy,
+    aws_iam_role_policy_attachment.eks_vpc_controller_policy
   ]
+}
 
-  tags = {
-    #  "kubernetes.io/cluster/${var.cluster_name}" = "owned"
-    Name = var.cluster_name
+# Create Node Group
+resource "aws_eks_node_group" "node_group" {
+  cluster_name    = aws_eks_cluster.eks_cluster.name
+  node_group_name = "${var.cluster_name}-ng"
+  node_role_arn   = aws_iam_role.node_role.arn
+  subnet_ids      = [aws_subnet.public.id]
+  instance_types  = var.instance_types
+  capacity_type   = "ON_DEMAND"
+  disk_size       = 20
 
+  scaling_config {
+    desired_size = 2
+    max_size     = 3
+    min_size     = 1
   }
 
+  depends_on = [
+    aws_eks_cluster.eks_cluster,
+    aws_iam_role_policy_attachment.worker_node_policy,
+    aws_iam_role_policy_attachment.cni_policy,
+    aws_iam_role_policy_attachment.registry_policy
+  ]
 }
 
-
-
-resource "aws_iam_role" "cluster" {
-  name = "eks-cluster-role"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = [
-          "sts:AssumeRole",
-          "sts:TagSession"
-        ]
-        Effect = "Allow"
-        Principal = {
-          Service = "eks.amazonaws.com"
-        }
-      },
-    ]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "cluster_AmazonEKSClusterPolicy" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
-  role       = aws_iam_role.cluster.name
-}
-
-resource "aws_iam_role_policy_attachment" "eks-AmazonEKSVPCResourceController" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSVPCResourceController"
-  role       = aws_iam_role.cluster.name
-}
