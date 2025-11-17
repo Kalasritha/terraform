@@ -1,0 +1,88 @@
+ Terraform EC2 Infrastructure With Docker Installation
+
+Project Overview
+
+This project uses Terraform to automate the creation of AWS EC2 infrastructure.
+It provisions the following:
+
+A VPC
+
+A public subnet
+
+A security group allowing SSH (22) and HTTP (80)
+
+An EC2 instance
+
+Automatic Docker installation using user_data
+
+Automatic run of an Nginx container on port 80
+
+This setup demonstrates Infrastructure as Code (IaC) using Terraform.
+
+ Architecture Components
+1. VPC
+
+CIDR Block: 10.0.0.0/16
+
+2. Public Subnet
+
+CIDR Block: 10.0.1.0/24
+
+Public IP auto-assigned
+
+3. Security Group
+
+Allows:
+
+Port 22 → SSH access
+
+Port 80 → Web access
+
+4. EC2 Instance
+
+Amazon Linux 2
+
+Type: t2.micro
+
+Docker installed and started automatically
+
+NGINX container runs on port 80
+
+ Project Structure
+terraform-ec2-docker/
+│
+├── main.tf
+├── variables.tf
+├── outputs.tf
+└── README.md
+
+🚀 How to Use
+1️ Initialize Terraform
+terraform init
+
+2 Validate the configuration
+terraform validate
+
+3️ Preview resources
+terraform plan
+
+4️ Deploy infrastructure
+terraform apply -auto-approve
+
+5️ Get Public IP
+
+After apply, Terraform outputs:
+
+EC2 Public IP
+Go to:
+
+http://<PUBLIC-IP>
+
+
+You should see the Nginx welcome page running from Docker.
+
+ Destroy Resources
+
+When done:
+
+terraform destroy -auto-approve
